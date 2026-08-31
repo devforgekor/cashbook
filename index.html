@@ -85,7 +85,46 @@ function doLogout() {
 }
 
 function fmt(n) {
-  return Number(n).toLocaleString() + '원';
+  return '₩' + Number(n).toLocaleString();
+}
+
+function fmtAmount(n) {
+  return '₩' + Number(n).toLocaleString();
+}
+
+function startAmountEdit(el) {
+  const val = el.dataset.raw || el.dataset.value || '0';
+  const input = document.createElement('input');
+  input.type = 'number';
+  input.value = val;
+  input.className = 'edit-input text-right';
+  input.style.cssText = 'width:100%;height:100%;';
+  const field = el.dataset.field;
+  const id = el.dataset.id;
+  const type = el.dataset.type;
+  input.dataset.field = field;
+  if (id) input.dataset.id = id;
+  if (type) input.dataset.type = type;
+  el.replaceWith(input);
+  input.focus();
+  input.select();
+  input.addEventListener('blur', () => finishAmountEdit(input));
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); });
+}
+
+function finishAmountEdit(input) {
+  const raw = input.value || '0';
+  const span = document.createElement('span');
+  span.className = 'edit-input text-right amount-display';
+  span.style.cssText = 'cursor:pointer;display:flex;align-items:center;justify-content:flex-end;width:100%;height:100%;';
+  span.dataset.field = input.dataset.field;
+  if (input.dataset.id) span.dataset.id = input.dataset.id;
+  if (input.dataset.type) span.dataset.type = input.dataset.type;
+  span.dataset.raw = raw;
+  span.dataset.value = raw;
+  span.textContent = fmtAmount(raw);
+  span.onclick = () => startAmountEdit(span);
+  input.replaceWith(span);
 }
 
 // Date format: YY.MM.DD.
@@ -173,8 +212,10 @@ function render(cb) {
           <input type="date" class="hidden-date" value="${isoVal}" onchange="onDatePicked(this)">
         </div></td>
       <td class="td-amount border px-0 py-0">
-        <input type="number" value="${d.amount}" class="edit-input text-right"
-               data-field="amount" data-id="${d.id}" data-type="deposit"></td>
+        <span class="edit-input text-right amount-display"
+              style="cursor:pointer;display:flex;align-items:center;justify-content:flex-end;width:100%;height:100%;"
+              data-field="amount" data-id="${d.id}" data-type="deposit" data-raw="${d.amount}"
+              onclick="startAmountEdit(this)">${fmtAmount(d.amount)}</span></td>
       <td class="td-text border px-0 py-0">
         <div class="flex items-center">
           <input type="text" value="${esc(d.notes)}" class="edit-input flex-1"
@@ -199,8 +240,10 @@ function render(cb) {
           <input type="date" class="hidden-date" value="${isoVal}" onchange="onDatePicked(this)">
         </div></td>
       <td class="td-amount border px-0 py-0">
-        <input type="number" value="${w.amount}" class="edit-input text-right"
-               data-field="amount" data-id="${w.id}" data-type="withdrawal"></td>
+        <span class="edit-input text-right amount-display"
+              style="cursor:pointer;display:flex;align-items:center;justify-content:flex-end;width:100%;height:100%;"
+              data-field="amount" data-id="${w.id}" data-type="withdrawal" data-raw="${w.amount}"
+              onclick="startAmountEdit(this)">${fmtAmount(w.amount)}</span></td>
       <td class="td-text border px-0 py-0">
         <div class="flex items-center">
           <input type="text" value="${esc(w.vendor)}" class="edit-input flex-1"
@@ -239,7 +282,10 @@ function render(cb) {
         <input type="date" class="hidden-date" onchange="onDatePickedNew(this, 'new-dep-date')">
       </div></td>
     <td class="td-amount border px-0 py-0">
-      <input type="number" id="new-dep-amount" placeholder="0" class="edit-input text-right"></td>
+      <div style="display:flex;align-items:center;height:34px;">
+        <span style="color:#9ca3af;padding-left:8px;font-size:0.875rem;">₩</span>
+        <input type="number" id="new-dep-amount" placeholder="0" class="edit-input text-right" style="width:calc(100% - 20px);">
+      </div></td>
     <td class="td-text border px-0 py-0">
       <div class="flex items-center">
         <input type="text" id="new-dep-notes" placeholder="비고" class="edit-input flex-1">
@@ -260,7 +306,10 @@ function render(cb) {
         <input type="date" class="hidden-date" onchange="onDatePickedNew(this, 'new-wit-date')">
       </div></td>
     <td class="td-amount border px-0 py-0">
-      <input type="number" id="new-wit-amount" placeholder="0" class="edit-input text-right"></td>
+      <div style="display:flex;align-items:center;height:34px;">
+        <span style="color:#9ca3af;padding-left:8px;font-size:0.875rem;">₩</span>
+        <input type="number" id="new-wit-amount" placeholder="0" class="edit-input text-right" style="width:calc(100% - 20px);">
+      </div></td>
     <td class="td-text border px-0 py-0">
       <div class="flex items-center">
         <input type="text" id="new-wit-vendor" placeholder="사용처" class="edit-input flex-1">
@@ -282,12 +331,24 @@ function esc(s) { return String(s).replace(/"/g, '&quot;').replace(/</g, '&lt;')
 async function handleEdit(el) {
   const { id, type, field } = el.dataset;
   const row = el.closest('tr');
-  const inputs = row.querySelectorAll('input[data-id]');
   const data = {};
-  inputs.forEach(i => {
-    const f = i.dataset.field;
-    if (f) data[f] = i.value;
+
+  // Date fields from inputs
+  row.querySelectorAll('input[data-field="date"]').forEach(i => {
+    data.date = i.value;
   });
+
+  // Amount from span or input
+  const amtEl = row.querySelector('[data-field="amount"]');
+  if (amtEl) {
+    data.amount = Number(amtEl.dataset.raw || amtEl.value || '0');
+  }
+
+  // Text fields
+  row.querySelectorAll('input[data-field="notes"], input[data-field="vendor"]').forEach(i => {
+    data[i.dataset.field] = i.value;
+  });
+
   if (data.date) data.date = toDisplayDate(data.date);
 
   try {
