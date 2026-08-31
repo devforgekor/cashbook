@@ -16,8 +16,6 @@ th.col-date    { width: 130px; }
 th.col-amount  { width: 90px; }
 .td-text,
 th.col-text    { width: auto; }
-.td-settle,
-th.col-settle  { width: 100px; }
 
 /* Inputs */
 .edit-input {
@@ -42,7 +40,6 @@ th.col-settle  { width: 100px; }
 .cashbook-table th {
   border: 1px solid #e5e7eb;
 }
-
 .cashbook-table tr:hover { background: #f9fafb; }
 .cashbook-table td { vertical-align: middle; }
 
@@ -84,4 +81,37 @@ th.col-settle  { width: 100px; }
   height: 0;
   opacity: 0;
   pointer-events: none;
+}
+
+/* Tabs */
+.tab-btn {
+  flex: 1;
+  padding: 12px 16px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #6b7280;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+.tab-btn:hover { color: #374151; background: #f9fafb; }
+.tab-active {
+  color: #2563eb;
+  border-bottom-color: #2563eb;
+  font-weight: 600;
+}
+
+/* Responsive */
+.desktop-only { display: table; }
+.mobile-only { display: none; }
+
+@media (max-width: 640px) {
+  .desktop-only { display: none !important; }
+  .mobile-only { display: block !important; }
+  .cashbook-table { font-size: 0.8125rem; }
+  .td-date, th.col-date { width: 110px; }
+  .td-amount, th.col-amount { width: 80px; }
 }
