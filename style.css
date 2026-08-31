@@ -11,9 +11,9 @@
 
 /* Column widths */
 .td-date,
-th.col-date    { width: 140px; }
+th.col-date    { width: 130px; }
 .td-amount,
-th.col-amount  { width: 100px; }
+th.col-amount  { width: 90px; }
 .td-text,
 th.col-text    { width: auto; }
 .td-settle,
